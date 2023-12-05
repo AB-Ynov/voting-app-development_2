@@ -1,0 +1,16 @@
+{
+  "builders": [
+    {
+      "type": "docker",
+      "image": "your-docker-repo/voting-app:${SHA}",
+      "commit": true
+    }
+  ],
+
+  "provisioners": [
+    {
+      "type": "ansible",
+      "playbook_file": "ansible/playbook.yml"
+    }
+  ]
+}
