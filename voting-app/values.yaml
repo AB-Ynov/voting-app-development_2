@@ -1,17 +1,29 @@
-image:
-  repository: voting-app-development_2/voting-app
-  tag: latest
+# values-canary.yaml
+nameOverride: "voting-app-canary"
+fullnameOverride: "voting-app-canary"
 
 service:
   type: LoadBalancer
-  port: 80
 
 ingress:
   enabled: true
   hosts:
-    - host: your-voting-app-domain.com
-      paths: ["/"]
+    - host: your-canary-voting-app-domain.com
+      paths:
+        - /
 
 canary:
-  enabled: false
-  weight: 0
+  enabled: true
+  replicaCount: 1
+  image:
+    repository: your-canary-voting-app-image
+    tag: latest
+  weight: 50
+  service:
+    name: voting-app-canary
+    port: 80
+  ingress:
+    hosts:
+      - host: your-canary-voting-app-domain.com
+        paths:
+          - /
