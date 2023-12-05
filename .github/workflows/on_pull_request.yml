@@ -6,42 +6,27 @@ on:
       - main
 
 jobs:
-  terraform:
-    runs-on: ubuntu-latest
-
-    steps:
-    - name: Checkout repository
-      uses: actions/checkout@v2
-
-    - name: Terraform Init
-      run: terraform init
-
-    - name: Terraform Validate
-      run: terraform validate
-
-    - name: Terraform Plan
-      run: terraform plan
-
-  deploy:
-    runs-on: ubuntu-latest
-    needs: terraform
-    steps:
-    - name: Manual approval
-      uses: aws-actions/manual-approval@v1
-
-    - name: Terraform Apply
-      run: terraform apply -auto-approve
-
   deploy_canary:
     runs-on: ubuntu-latest
-    needs: terraform
+
     steps:
     - name: Checkout repository
       uses: actions/checkout@v2
+
+    - name: Set up Docker
+      uses: docker/setup-docker@v2
+      with:
+        dockerfile: platforms/dev/Dockerfile
+
+    - name: Build Docker image
+      run: docker build -t your-docker-repo/voting-app:${{ github.sha }} .
+
+    - name: Push Docker image
+      run: docker push your-docker-repo/voting-app:${{ github.sha }}
 
     - name: Deploy Canary Release
       run: |
         helm upgrade --install voting-app ./voting-app \
-          -f ./voting-app/values.yaml \
+          -f ./voting-app/values-canary.yaml \
           --set canary.enabled=true \
           --set canary.weight=50
