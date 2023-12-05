@@ -2,14 +2,15 @@
   "builders": [
     {
       "type": "docker",
-      "image": "docker-image-name:tag",
+      "image": "your-docker-repo/voting-app:${SHA}",
       "commit": true
     }
   ],
+
   "provisioners": [
     {
       "type": "ansible",
-      "playbook_file": "path/to/ansible-playbook.yml"
+      "playbook_file": "ansible/playbook.yml"
     }
   ]
 }
