@@ -1,12 +1,11 @@
-# Stage 1: Build
-FROM node:14 AS builder
+# Build Stage
+FROM golang:1.16 AS build
 WORKDIR /app
 COPY . .
-RUN npm install
-RUN npm run build
+RUN go build -o voting-app
 
-# Stage 2: Production Image
-FROM nginx:1.21.3-alpine
-COPY --from=builder /app/build /usr/share/nginx/html
-EXPOSE 80
-CMD ["nginx", "-g", "daemon off;"]
+# Final Stage
+FROM alpine:latest
+WORKDIR /app
+COPY --from=build /app/voting-app .
+CMD ["./voting-app"]
