@@ -34,7 +34,7 @@ resource "azurerm_kubernetes_cluster" "aks" {
   }
 }
 
-# Helm Chart Installations (Assuming you have helm installed)
+# Helm Chart Installations
 # Install Nginx Ingress Controller
 resource "helm_release" "nginx_ingress" {
   name       = "nginx-ingress"
@@ -51,8 +51,10 @@ resource "helm_release" "redis" {
   namespace  = "default"
 }
 
-# Install KubeCost (Bonus)
-# ...
-
-# Add Helm Chart for voting-app (Assuming you have a Helm Chart for voting-app)
-# ...
+# Install Voting App Helm Chart
+resource "helm_release" "voting_app" {
+  name       = "voting-app"
+  repository = "path/to/voting-app"
+  chart      = "voting-app"
+  namespace  = "default"
+}
