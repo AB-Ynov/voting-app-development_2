@@ -22,8 +22,6 @@ jobs:
     - name: Terraform Plan
       run: terraform plan
 
-  # Add a job for InfraCost here
-
   deploy:
     runs-on: ubuntu-latest
     needs: terraform
@@ -33,3 +31,17 @@ jobs:
 
     - name: Terraform Apply
       run: terraform apply -auto-approve
+
+  deploy_canary:
+    runs-on: ubuntu-latest
+    needs: terraform
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v2
+
+    - name: Deploy Canary Release
+      run: |
+        helm upgrade --install voting-app ./voting-app \
+          -f ./voting-app/values.yaml \
+          --set canary.enabled=true \
+          --set canary.weight=50
