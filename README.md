@@ -20,7 +20,9 @@ Ce projet déploie une application de vote sur Kubernetes en utilisant Helm Char
 │   │   ├── ingress.yaml
 │   │   └── service.yaml
 ├── .gitignore
+├── README.md
 ├── outputs.tf
+├── packer.json
 ├── providers.tf
 ├── terraform.tf
 └── variables.tf
