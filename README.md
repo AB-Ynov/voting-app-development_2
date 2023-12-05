@@ -136,3 +136,11 @@ Pour utiliser le Codespace avec le projet, vous pouvez suivre ces étapes d'inst
     chmod +x get_helm.sh
     ./get_helm.sh
     ```
+
+Vérifiez que Minikube est Démarré : Si vous utilisez Minikube, assurez-vous qu'il est démarré. Exécutez la commande suivante pour démarrer Minikube si ce n'est pas déjà fait :
+
+minikube start
+Vérifiez la Configuration Kubernetes : Vérifiez que kubectl pointe vers le bon cluster Kubernetes. Exécutez la commande suivante pour afficher la configuration kubectl :
+
+kubectl config view
+Assurez-vous que le contexte actif est correct et qu'il pointe vers le cluster que vous souhaitez utiliser.

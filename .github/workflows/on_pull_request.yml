@@ -20,9 +20,27 @@ jobs:
 
       - name: Build and Push Docker Image
         run: |
-          docker build -t ${{ secrets.DOCKER_REPO }}/voting-app:${{ github.sha }} .
-          docker push ${{ secrets.DOCKER_REPO }}/voting-app:${{ github.sha }}
+          docker build -t abynov/voting-app:${{ github.sha }} .
+          docker push abynov/voting-app:${{ github.sha }}
 
       - name: Deploy Helm Chart
         run: |
           helm upgrade --install voting-app ./Helm/voting-app -f ./Helm/voting-app/values-canary.yaml --set canary.enabled=true --set canary.weight=50
+
+  deploy:
+    runs-on: ubuntu-latest
+    needs: build  # Exécuter ce job après la construction
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v2
+
+      - name: Set up k8s
+        uses: azure/setup-k8s@v1
+        with:
+          kubeconfig: ${{secrets.KUBE_CONFIG }}
+          version: 'v1.21.0'  # Mettez à jour la version selon vos besoins
+
+      - name: Deploy to Kubernetes
+        run: |
+          kubectl apply -f ./path/to/your/kubernetes/deployment.yaml
