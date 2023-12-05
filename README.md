@@ -38,6 +38,24 @@ Ce projet déploie une application de vote sur Kubernetes en utilisant Helm Char
 4. Exécutez `terraform plan` pour voir les changements prévus.
 5. Une fois satisfaits, exécutez `terraform apply` pour déployer l'infrastructure.
 ```
+
+
+Dans le terminal du Codespace, exécutez les commandes nécessaires pour initialiser et déployer le projet.
+
+#### Installer Terraform
+```
+curl -fsSL https://apt.releases.hashicorp.com/gpg | sudo gpg --dearmor -o /usr/share/keyrings/hashicorp-archive-keyring.gpg
+echo "deb [signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] https://apt.releases.hashicorp.com $(lsb_release -cs) main" | sudo tee /etc/apt/sources.list.d/hashicorp.list > /dev/null
+sudo apt-get update && sudo apt-get install terraform
+```
+#### Initialiser et déployer l'infrastructure Terraform
+```
+terraform init
+terraform validate
+terraform plan
+terraform apply
+```
+
 ### CI/CD Pipeline
 ```
 Le pipeline CI/CD est déclenché automatiquement sur les pull requests. Il construit l'image Docker, la pousse vers le registre Docker et déploie l'application en mode canary sur Kubernetes.
@@ -51,10 +69,24 @@ Le fichier `Dockerfile` dans `platforms/dev` utilise un build multi-staged pour 
 1. Utilisez Packer pour construire une image Docker en remplaçant `${SHA}` par le commit SHA actuel.
 2. Packer utilise Ansible pour le provisionnement. Les tâches spécifiques peuvent être ajoutées dans `ansible/playbook.yml`.
 ```
+Vous pouvez également exécuter le processus de build multi-staged Docker en exécutant les commandes suivantes :
+#### Construire l'image Docker multi-staged
+```
+docker build -t your-docker-repo/voting-app:${SHA} -f platforms/dev/Dockerfile .
+```
+#### Pousser l'image vers le registre Docker
+```
+docker push your-docker-repo/voting-app:${SHA}
+```
 ## Configuration Helm Chart
 ```
 - `voting-app/values.yaml`: Configuration par défaut de l'application.
 - `voting-app/values-canary.yaml`: Configuration spécifique pour le déploiement en mode canary.
+```
+Vous pouvez déployer le Helm Chart sur un cluster Kubernetes avec les commandes suivantes :
+# Installer le Helm Chart
+```
+helm upgrade --install voting-app ./voting-app -f ./voting-app/values-canary.yaml --set canary.enabled=true --set canary.weight=50
 ```
 ## Remarques
 ```
