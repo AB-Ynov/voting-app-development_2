@@ -46,6 +46,19 @@ curl -fsSL https://apt.releases.hashicorp.com/gpg | sudo gpg --dearmor -o /usr/s
 echo "deb [signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] https://apt.releases.hashicorp.com $(lsb_release -cs) main" | sudo tee /etc/apt/sources.list.d/hashicorp.list > /dev/null
 sudo apt-get update && sudo apt-get install terraform
 ```
+#### Installer Azure CLI 
+```
+curl -sL https://aka.ms/InstallAzureCLIDeb | sudo bash
+az --version
+```
+#### Se Connecter à Azure CLI
+```
+az login --use-device-code
+```
+#### Se Connecter à Azure CLI
+```
+az login --use-device-code
+```
 #### Initialiser et déployer l'infrastructure Terraform
 ```
 terraform init
