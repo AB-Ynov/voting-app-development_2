@@ -21,7 +21,8 @@ terraform {
 }
 
 provider "azurerm" {
-  features {}
+  alias = "main"
+  features = {}
 }
 
 provider "helm" {
