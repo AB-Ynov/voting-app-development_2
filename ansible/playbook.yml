@@ -1,6 +1,0 @@
----
-- name: Provision Docker Image
-  hosts: localhost
-  tasks:
-    - name: Your Ansible tasks here
-      # ...
