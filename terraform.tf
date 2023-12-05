@@ -26,6 +26,7 @@ resource "azurerm_kubernetes_cluster" "aks" {
   resource_group_name = azurerm_resource_group.rg.name
   location            = azurerm_resource_group.rg.location
   dns_prefix          = "myaksdns"
+  kubernetes_version  = "1.21.2"  # Specify the desired Kubernetes version
 
   default_node_pool {
     name       = "default"
@@ -57,4 +58,13 @@ resource "helm_release" "voting_app" {
   repository = "path/to/voting-app"
   chart      = "voting-app"
   namespace  = "default"
+}
+
+terraform {
+  backend "azurerm" {
+    resource_group_name   = "terraform"
+    storage_account_name   = "terraformsimplon"
+    container_name         = "terraformstate"
+    key                    = "terraform.tfstate"
+  }
 }
