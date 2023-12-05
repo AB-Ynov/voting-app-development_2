@@ -63,42 +63,6 @@ az --version
 az login --use-device-code
 ```
 
-#### Initialiser et déployer l'infrastructure Terraform
-
-```bash
-terraform init
-terraform validate
-terraform plan
-terraform apply
-```
-
-### CI/CD Pipeline
-
-Le pipeline CI/CD est déclenché automatiquement sur les pull requests. Il construit l'image Docker, la pousse vers le registre Docker et déploie l'application en mode canary sur Kubernetes.
-
-### Docker Build Multi-Staged
-
-Le fichier `Dockerfile` dans `platforms/dev` utilise un build multi-staged pour optimiser la taille de l'image.
-
-### Packer et Ansible
-
-1. Utilisez Packer pour construire une image Docker en remplaçant `${SHA}` par le commit SHA actuel.
-2. Packer utilise Ansible pour le provisionnement. Les tâches spécifiques peuvent être ajoutées dans `ansible/playbook.yml`.
-
-Vous pouvez également exécuter le processus de build multi-staged Docker en exécutant les commandes suivantes :
-
-#### Construire l'image Docker multi-staged
-
-```bash
-docker build -t your-docker-repo/voting-app:${SHA} -f platforms/dev/Dockerfile .
-```
-
-#### Pousser l'image vers le registre Docker
-
-```bash
-docker push your-docker-repo/voting-app:${SHA}
-```
-
 ## Configuration Helm Chart
 
 - `voting-app/values.yaml`: Configuration par défaut de l'application.
@@ -162,4 +126,40 @@ Vérifiez la Configuration Kubernetes : Vérifiez que kubectl pointe vers le bon
 
 ```bash
 kubectl config view
+```
+
+#### Initialiser et déployer l'infrastructure Terraform
+
+```bash
+terraform init
+terraform validate
+terraform plan
+terraform apply
+```
+
+### CI/CD Pipeline
+
+Le pipeline CI/CD est déclenché automatiquement sur les pull requests. Il construit l'image Docker, la pousse vers le registre Docker et déploie l'application en mode canary sur Kubernetes.
+
+### Docker Build Multi-Staged
+
+Le fichier `Dockerfile` dans `platforms/dev` utilise un build multi-staged pour optimiser la taille de l'image.
+
+### Packer et Ansible
+
+1. Utilisez Packer pour construire une image Docker en remplaçant `${SHA}` par le commit SHA actuel.
+2. Packer utilise Ansible pour le provisionnement. Les tâches spécifiques peuvent être ajoutées dans `ansible/playbook.yml`.
+
+Vous pouvez également exécuter le processus de build multi-staged Docker en exécutant les commandes suivantes :
+
+#### Construire l'image Docker multi-staged
+
+```bash
+docker build -t your-docker-repo/voting-app:${SHA} -f platforms/dev/Dockerfile .
+```
+
+#### Pousser l'image vers le registre Docker
+
+```bash
+docker push your-docker-repo/voting-app:${SHA}
 ```
