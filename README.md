@@ -92,23 +92,23 @@ Pour utiliser le Codespace avec le projet, vous pouvez suivre ces étapes d'inst
  sudo bash
     ```
 
-2. **Terraform:**
+2.**Terraform:**
 
-    ```bash
+```bash
     sudo apt-get install -y unzip
     curl -fsSL https://apt.releases.hashicorp.com/gpg | sudo gpg --dearmor -o /usr/share/keyrings/hashicorp-archive-keyring.gpg
     echo "deb [signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] https://apt.releases.hashicorp.com $(lsb_release -cs) main" | sudo tee /etc/apt/sources.list.d/hashicorp.list > /dev/null
     sudo apt-get update && sudo apt-get install terraform
     ```
 
-3. **Docker:**
+3.**Docker:**
 
-    ```bash
+```bash
     curl -fsSL https://get.docker.com | sudo bash
     sudo usermod -aG docker $USER
     ```
 
-4. **Helm:**
+4.**Helm:**
 
     ```bash
     curl -fsSL -o get_helm.sh https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3
