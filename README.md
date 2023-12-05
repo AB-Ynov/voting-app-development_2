@@ -106,3 +106,33 @@ helm upgrade --install voting-app ./voting-app -f ./voting-app/values-canary.yam
 - Assurez-vous d'ajuster les fichiers en fonction de votre configuration spécifique.
 - Remplacez les valeurs telles que `your-docker-repo` par vos propres valeurs.
 ```
+
+Pour utiliser le Codespace avec le projet, vous pouvez suivre ces étapes d'installation et de lancement du projet. Assurez-vous que toutes les dépendances nécessaires sont installées dans votre Codespace. Notez que ces instructions supposent que vous avez déjà configuré les secrets appropriés dans les paramètres du dépôt GitHub.
+
+### Installation
+
+1. **Azure CLI:**
+    ```bash
+    curl -fsSL https://aka.ms/InstallAzureCLIDeb | sudo bash
+    ```
+
+2. **Terraform:**
+    ```bash
+    sudo apt-get install -y unzip
+    curl -fsSL https://apt.releases.hashicorp.com/gpg | sudo gpg --dearmor -o /usr/share/keyrings/hashicorp-archive-keyring.gpg
+    echo "deb [signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] https://apt.releases.hashicorp.com $(lsb_release -cs) main" | sudo tee /etc/apt/sources.list.d/hashicorp.list > /dev/null
+    sudo apt-get update && sudo apt-get install terraform
+    ```
+
+3. **Docker:**
+    ```bash
+    curl -fsSL https://get.docker.com | sudo bash
+    sudo usermod -aG docker $USER
+    ```
+
+4. **Helm:**
+    ```bash
+    curl -fsSL -o get_helm.sh https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3
+    chmod +x get_helm.sh
+    ./get_helm.sh
+    ```
