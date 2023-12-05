@@ -3,7 +3,8 @@
 Ce projet déploie une application de vote sur Kubernetes en utilisant Helm Charts. Il inclut également un pipeline CI/CD pour déployer l'application en mode canary avec un poids de 50/50.
 
 ## Structure du Répertoire
-```
+
+```markdown
 .
 ├── .github
 │   └── workflows
@@ -27,6 +28,7 @@ Ce projet déploie une application de vote sur Kubernetes en utilisant Helm Char
 ├── terraform.tf
 └── variables.tf
 ```
+
 ## Utilisation
 
 ### Terraform Infrastructure
@@ -120,7 +122,9 @@ Pour utiliser le Codespace avec le projet, vous pouvez suivre ces étapes d'inst
 1. **Azure CLI:**
 
     ```bash
-    curl -fsSL https://aka.ms/InstallAzureCLIDeb | sudo bash
+    curl -fsSL https://aka.ms/InstallAzureCLIDeb |
+
+ sudo bash
     ```
 
 2. **Terraform:**
