@@ -1,0 +1,15 @@
+{
+  "builders": [
+    {
+      "type": "docker",
+      "image": "docker-image-name:tag",
+      "commit": true
+    }
+  ],
+  "provisioners": [
+    {
+      "type": "ansible",
+      "playbook_file": "path/to/ansible-playbook.yml"
+    }
+  ]
+}
