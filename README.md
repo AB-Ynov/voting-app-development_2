@@ -158,7 +158,3 @@ Vérifiez la Configuration Kubernetes : Vérifiez que kubectl pointe vers le bon
 ```bash
 kubectl config view
 ```
-
-Assurez-vous que le contexte actif est correct et qu'il pointe vers le cluster que vous souhaitez utiliser.
-
-N'oubliez pas d'ajuster les valeurs telles que `your-docker-repo` avec vos propres informations. Si vous avez d'autres questions ou des ajustements spécifiques que vous souhaitez apporter, n'hésitez pas à le faire savoir.
