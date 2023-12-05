@@ -1,207 +1,35 @@
-name: Tests 
+name: CI/CD Pipeline
 
-# The GitHub Actions docs (https://docs.github.com/en/actions/reference/workflow-syntax-for-github-actions#on)
-# describe other options for 'on', 'pull_request' is a good default.
-on: [pull_request]
-env:
-  # If you use private modules you'll need this env variable to use
-  # the same ssh-agent socket value across all jobs & steps.
-  SSH_AUTH_SOCK: /tmp/ssh_agent.sock
+on:
+  pull_request:
+    branches:
+      - main
+
 jobs:
   terraform:
-    name: TerraformChecks
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      pull-requests: write
-    env:
-      ARM_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
-      ARM_SUBSCRIPTION_ID: "a1f74e2d-ec58-4f9a-a112-088e3469febb"
-      ARM_CLIENT_ID: "f9e9511a-594a-4104-ab7b-b768fe4a1439"
-      ARM_TENANT_ID: "a2e466aa-4f86-4545-b5b8-97da7c8febf3"
-    steps:
-      - name: add GIT_SSH_KEY
-        run: |
-          ssh-agent -a $SSH_AUTH_SOCK
-          mkdir -p ~/.ssh
-          echo "${{ secrets.GIT_SSH_KEY }}" | tr -d '\r' | ssh-add -
-          ssh-keyscan github.com >> ~/.ssh/known_hosts
-
-      - name: Checkout base branch
-        uses: actions/checkout@v3
-      
-      - name: HashiCorp - Setup Terraform
-        uses: hashicorp/setup-terraform@v2
-        with:
-          terraform_version: 1.3.9
-
-      - name: Terraform fmt
-        id: fmt
-        run: terraform fmt -check
-        continue-on-error: true
-
-      - name: Az Login
-        uses: azure/login@v1
-        with:
-          creds: ${{ secrets.AZURE_CREDS }}
-
-      - name: Terraform Init
-        id: init
-        run: terraform init
-
-      - name: Terraform Validate
-        id: validate
-        run: terraform validate -no-color
-
-      - name: Terraform Plan
-        id: plan
-        run: terraform plan -no-color -var-file platforms/dev/terraform.tfvars
-        continue-on-error: true
-
-      - uses: actions/github-script@v6
-        if: github.event_name == 'pull_request'
-        env:
-          PLAN: "terraform\n${{ steps.plan.outputs.stdout }}"
-        with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          script: |
-            const output = `#### Terraform Format and Style 🖌\`${{ steps.fmt.outcome }}\`
-            #### Terraform Initialization ⚙️\`${{ steps.init.outcome }}\`
-            #### Terraform Validation 🤖\`${{ steps.validate.outcome }}\`
-            <details><summary>Validation Output</summary>
-
-            \`\`\`\n
-            ${{ steps.validate.outputs.stdout }}
-            \`\`\`
-
-            </details>
-
-            #### Terraform Plan 📖\`${{ steps.plan.outcome }}\`
-
-            <details><summary>Show Plan</summary>
-
-            \`\`\`\n
-            ${process.env.PLAN}
-            \`\`\`
-
-            </details>
-
-            *Pusher: @${{ github.actor }}, Action: \`${{ github.event_name }}\`, Working Directory: \`${{ env.tf_actions_working_dir }}\`, Workflow: \`${{ github.workflow }}\`*`;
-
-            github.rest.issues.createComment({
-              issue_number: context.issue.number,
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              body: output
-            })
-
-  infracost:
-    name: Infracost
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      # Required to post comments
-      pull-requests: write
-
-    env:
-      TF_ROOT: "."
-      # If you're using Terraform Cloud/Enterprise and have variables or private modules stored
-      # on there, specify the following to automatically retrieve the variables:
-      #   INFRACOST_TERRAFORM_CLOUD_TOKEN: ${{ secrets.TFC_TOKEN }}
-      #   INFRACOST_TERRAFORM_CLOUD_HOST: app.terraform.io # Change this if you're using Terraform Enterprise
 
     steps:
-      # If you use private modules, add an environment variable or secret
-      # called GIT_SSH_KEY with your private key, so Infracost can access
-      # private repositories (similar to how Terraform/Terragrunt does).
-      - name: add GIT_SSH_KEY
-        run: |
-          ssh-agent -a $SSH_AUTH_SOCK
-          mkdir -p ~/.ssh
-          echo "${{ secrets.GIT_SSH_KEY }}" | tr -d '\r' | ssh-add -
-          ssh-keyscan github.com >> ~/.ssh/known_hosts
+    - name: Checkout repository
+      uses: actions/checkout@v2
 
-      - name: Setup Infracost
-        uses: infracost/actions/setup@v2
-        # See https://github.com/infracost/actions/tree/master/setup for other inputs
-        # If you can't use this action, see Docker images in https://infracost.io/cicd
-        with:
-          api-key: ${{ secrets.INFRACOST_API_KEY }}
+    - name: Terraform Init
+      run: terraform init
 
-      # Checkout the base branch of the pull request (e.g. main/master).
-      - name: Checkout base branch
-        uses: actions/checkout@v3
-        with:
-          ref: '${{ github.event.pull_request.base.ref }}'
+    - name: Terraform Validate
+      run: terraform validate
 
-      # Generate Infracost JSON file as the baseline.
-      - name: Generate Infracost cost estimate baseline
-        run: |
-          infracost breakdown --path=${TF_ROOT} --terraform-var-file=platforms/dev/terraform.tfvars \
-                              --format=json \
-                              --out-file=/tmp/infracost-base.json --log-level debug
+    - name: Terraform Plan
+      run: terraform plan
 
-      # Checkout the current PR branch so we can create a diff.
-      - name: Checkout PR branch
-        uses: actions/checkout@v3
+  # Add a job for InfraCost here
 
-      # Generate an Infracost diff and save it to a JSON file.
-      - name: Generate Infracost diff
-        run: |
-          infracost diff --path=${TF_ROOT} --terraform-var-file=platforms/dev/terraform.tfvars \
-                          --format=json \
-                          --compare-to=/tmp/infracost-base.json \
-                          --out-file=/tmp/infracost.json
-
-      # Posts a comment to the PR using the 'update' behavior.
-      # This creates a single comment and updates it. The "quietest" option.
-      # The other valid behaviors are:
-      #   delete-and-new - Delete previous comments and create a new one.
-      #   hide-and-new - Minimize previous comments and create a new one.
-      #   new - Create a new cost estimate comment on every push.
-      # See https://www.infracost.io/docs/features/cli_commands/#comment-on-pull-requests for other options.
-      - name: Post Infracost comment
-        run: |
-            infracost comment github --path=/tmp/infracost.json \
-                                     --repo=$GITHUB_REPOSITORY \
-                                     --github-token=${{github.token}} \
-                                     --pull-request=${{github.event.pull_request.number}} \
-                                     --behavior=new
-  tfsec:
-    name: tfsec
+  deploy:
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      pull-requests: write
-
+    needs: terraform
     steps:
-      - name: Clone repo
-        uses: actions/checkout@v3
-      - name: tfsec
-        id: sec
-        uses: aquasecurity/tfsec-action@v1.0.0
-      
-      - uses: actions/github-script@v6
-        if: always()
-        env:
-          PLAN: "terraform\n${{ steps.plan.outputs.stdout }}"
-        with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          script: |
-            const output = `#### Terraform Security\`${{ steps.sec.outcome }}\`
-            <details><summary>Security Output</summary>
+    - name: Manual approval
+      uses: aws-actions/manual-approval@v1
 
-            \`\`\`\n
-            ${{ steps.sec.outputs.stdout }}
-            \`\`\`
-
-            </details>
-
-            *Pusher: @${{ github.actor }}, Action: \`${{ github.event_name }}\`, Working Directory: \`${{ env.tf_actions_working_dir }}\`, Workflow: \`${{ github.workflow }}\`*`;
-
-            github.rest.issues.createComment({
-              issue_number: context.issue.number,
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              body: output
-            })
+    - name: Terraform Apply
+      run: terraform apply -auto-approve
