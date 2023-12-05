@@ -1,57 +1,58 @@
-module "network" {
-  source = "git@github.com:AB-Ynov/azure_resource_group?ref=v1.0.1"
+provider "azurerm" {
+  features = {}
+}
 
-  location      = var.location
-  subnet_config = var.subnet_config
+resource "azurerm_resource_group" "rg" {
+  name     = "myResourceGroup"
+  location = "East US"
+}
+
+resource "azurerm_virtual_network" "vnet" {
+  name                = "myVnet"
+  address_space       = ["10.0.0.0/16"]
+  location            = azurerm_resource_group.rg.location
+  resource_group_name = azurerm_resource_group.rg.name
+}
+
+resource "azurerm_subnet" "subnet" {
+  name                 = "mySubnet"
+  resource_group_name = azurerm_resource_group.rg.name
+  virtual_network_name = azurerm_virtual_network.vnet.name
+  address_prefixes    = ["10.0.1.0/24"]
 }
 
 resource "azurerm_kubernetes_cluster" "aks" {
-  name                = format("%s-%s", var.name, terraform.workspace)
-  location            = module.network.resource_group.location
-  resource_group_name = module.network.resource_group.name
-  dns_prefix          = format("%s-%s", var.name, terraform.workspace)
+  name                = "myAKSCluster"
+  resource_group_name = azurerm_resource_group.rg.name
+  location            = azurerm_resource_group.rg.location
+  dns_prefix          = "myaksdns"
 
   default_node_pool {
-    name       = var.aks_node_pool_config.default.name
-    node_count = var.aks_node_pool_config.default.node_count
-    vm_size    = var.aks_node_pool_config.default.vm_size
+    name       = "default"
+    node_count = 1
+    vm_size    = "Standard_D2_v2"
   }
-
-  identity {
-    type = "SystemAssigned"
-  }
-
-  tags = var.tags
 }
 
-# UPDATE YOUR KUBE CONFIG OTHERWISE HELM WILL NOT BE ABLE TO DEPLOY THE CHART 
-
-
-resource "local_file" "kube_config" {
-  content  = azurerm_kubernetes_cluster.aks.kube_config_raw
-  filename = ".kube/config"
+# Helm Chart Installations (Assuming you have helm installed)
+# Install Nginx Ingress Controller
+resource "helm_release" "nginx_ingress" {
+  name       = "nginx-ingress"
+  repository = "https://charts.bitnami.com/bitnami"
+  chart      = "nginx-ingress-controller"
+  namespace  = "default"
 }
 
-resource "helm_release" "chart" {
-  for_each         = var.charts
-  name             = each.key
-  namespace        = each.key
-  create_namespace = each.value.create_namespace
-  repository       = each.value.repository
-  chart            = each.key
-  version          = each.value.version
-
-  dynamic "set" {
-    for_each = each.value.sets
-    content {
-      name = set.key
-      value = set.value
-    }
-  }
-
-  depends_on = [
-    azurerm_kubernetes_cluster.aks,
-    module.network,
-    local_file.kube_config
-  ]
+# Install Redis
+resource "helm_release" "redis" {
+  name       = "redis"
+  repository = "https://charts.bitnami.com/bitnami"
+  chart      = "redis"
+  namespace  = "default"
 }
+
+# Install KubeCost (Bonus)
+# ...
+
+# Add Helm Chart for voting-app (Assuming you have a Helm Chart for voting-app)
+# ...
