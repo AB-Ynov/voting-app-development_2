@@ -1,10 +1,11 @@
+# voting-app/templates/service-canary.yaml
 apiVersion: v1
 kind: Service
 metadata:
-  name: voting-app
+  name: voting-app-canary
 spec:
   selector:
-    app: voting-app
+    app: voting-app-canary
   ports:
     - protocol: TCP
       port: 80
