@@ -1,8 +1,8 @@
-# Voting App Development
 ```markdown
+# Voting App Development
 
 Ce projet déploie une application de vote sur Kubernetes en utilisant Helm Charts. Il inclut également un pipeline CI/CD pour déployer l'application en mode canary avec un poids de 50/50.
-```
+
 ## Structure du Répertoire
 
 ```
