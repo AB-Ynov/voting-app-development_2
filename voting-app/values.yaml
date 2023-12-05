@@ -1,1 +1,17 @@
-# Add your default values for the Voting App here
+image:
+  repository: voting-app-development_2/voting-app
+  tag: latest
+
+service:
+  type: LoadBalancer
+  port: 80
+
+ingress:
+  enabled: true
+  hosts:
+    - host: your-voting-app-domain.com
+      paths: ["/"]
+
+canary:
+  enabled: false
+  weight: 0
