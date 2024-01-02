@@ -1,165 +1,72 @@
-# Voting App Development
+# Correction
 
-Ce projet déploie une application de vote sur Kubernetes en utilisant Helm Charts. Il inclut également un pipeline CI/CD pour déployer l'application en mode canary avec un poids de 50/50.
+## Terraform
+Rien de complexe dans le Terraform on utilise simplement les valeurs par defaut pour deployer.
 
-## Structure du Répertoire
+Il faut cependant bien penser a ecrire le fichier kube config sur notre systeme avant de pouvoir deployer les helm charts
 
-```markdown
-.
-├── .github
-│   └── workflows
-│       └── on_pull_request.yml
-├── platforms
-│   └── dev
-│       └── Dockerfile
-├── voting-app
-│   ├── Chart.yaml
-│   ├── values.yaml
-│   ├── values-canary.yaml
-│   ├── templates
-│   │   ├── deployment.yaml
-│   │   ├── ingress.yaml
-│   │   └── service.yaml
-├── .gitignore
-├── README.md
-├── outputs.tf
-├── packer.json
-├── providers.tf
-├── terraform.tf
-└── variables.tf
+Au niveau Helm chart on reutilise ceux de la communauté pour l'ingress et redis il suffit simplement de suivre la documentation.
+
+## Helm Chart
+On cree le chart de notre voting-app avec la commande ```helm create```, on doit legerement modifier le fichier `templates/deployment.yaml` pour inclure la variable d'environnement et on donne la valeur ```redis.redis.svc.cluster.local``` qui pointe vers le FQDN dans Kubernetes directement.
+
+On change quelques valeurs dans le fichier `values.yaml` entre autre pour activer l'ingress et on modifie le nom de domaine.
+
+Vu qu'on a pas de serveur DNS on modifie le fichier `/etc/hosts` de notre machine pour faire pointer l'IP public de notre cluster vers le nom choisit, puis on peut interroger le FQDN
+
+## KubeConfig
+La Kubeconfig est le fichier vous permettant de vous connecter a votre cluster Kubernetes, sans ce fichier la connexion va etre difficile.
+
+Il faut imperativement l'ecrire dans un fichier sur votre machine sinon vous ne pourrez jamais deployer vos helm charts
+c'est le but de ce bloc terraform 
+```HCL 
+resource "local_file" "kube_config" {
+    content  = azurerm_kubernetes_cluster.aks.kube_config_raw
+    filename = ".kube/config"
+}
 ```
 
-## Utilisation
-
-### Terraform Infrastructure
-
-1. Assurez-vous d'avoir Terraform installé.
-2. Modifiez les fichiers `terraform.tfvars` avec vos configurations spécifiques.
-3. Exécutez `terraform init` et `terraform validate` pour initialiser et valider la configuration.
-4. Exécutez `terraform plan` pour voir les changements prévus.
-5. Une fois satisfaits, exécutez `terraform apply` pour déployer l'infrastructure.
-
-Dans le terminal du Codespace, exécutez les commandes nécessaires pour initialiser et déployer le projet.
-
-#### Installer Terraform
-
-```bash
-curl -fsSL https://apt.releases.hashicorp.com/gpg | sudo gpg --dearmor -o /usr/share/keyrings/hashicorp-archive-keyring.gpg
-echo "deb [signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] https://apt.releases.hashicorp.com $(lsb_release -cs) main" | sudo tee /etc/apt/sources.list.d/hashicorp.list > /dev/null
-
-sudo apt-get update && sudo apt-get install terraform
+## Kubecost
+Pour installer Kubecost, il va vous falloir creer un compte sur le site de kubecost directement, grace a ça vous pourrez avoir un token dont vous servirez pour le deploiement.
+Soit vous passez en ligne de commande avec kubectl
+```shell
+helm install kubecost kubecost/cost-analyzer -n kubecost --create-namespace \
+  --set kubecostToken="aGVsbUBrdWJlY29zdC5jb20=xm343yadf98"
 ```
 
-#### Installer Azure CLI
+Soit vous adaptez le terraform comme ceci:
+```HCL
+resource "helm_release" "kubecost" {
+  name             = "kubecost"
+  namespace        = "kubecost"
+  create_namespace = true
+  repository       = "https://kubecost.github.io/cost-analyzer/"
+  chart            = "cost-analyzer"
 
-```bash
-curl -sL https://aka.ms/InstallAzureCLIDeb | sudo bash
-az --version
+  set {
+    name  = "kubecostToken"
+    value = "token"
+  }
+
+  depends_on = [
+    azurerm_kubernetes_cluster.aks,
+    local_file.kube_config
+  ]
+}
+
 ```
 
-#### Se Connecter à Azure CLI
 
-```bash
-az login --use-device-code
-```
-
-## Configuration Helm Chart
-
-- `voting-app/values.yaml`: Configuration par défaut de l'application.
-- `voting-app/values-canary.yaml`: Configuration spécifique pour le déploiement en mode canary.
-
-Vous pouvez déployer le Helm Chart sur un cluster Kubernetes avec les commandes suivantes :
-
-```bash
-# Installer le Helm Chart
-helm upgrade --install voting-app ./voting-app -f ./voting-app/values-canary.yaml --set canary.enabled=true --set canary.weight=50
-```
-
-## Remarques
-
-- Assurez-vous d'ajuster les fichiers en fonction de votre configuration spécifique.
-- Remplacez les valeurs telles que `your-docker-repo` par vos propres valeurs.
-
-Pour utiliser le Codespace avec le projet, vous pouvez suivre ces étapes d'installation et de lancement du projet. Assurez-vous que toutes les dépendances nécessaires sont installées dans votre Codespace. Notez que ces instructions supposent que vous avez déjà configuré les secrets appropriés dans les paramètres du dépôt GitHub.
-
-### Installation
-
-1. **Azure CLI:**
-
-    ```bash
-    curl -fsSL https://aka.ms/InstallAzureCLIDeb |
-
- sudo bash
-    ```
-
-2.**Terraform:**
-
-```bash
-    sudo apt-get install -y unzip
-    curl -fsSL https://apt.releases.hashicorp.com/gpg | sudo gpg --dearmor -o /usr/share/keyrings/hashicorp-archive-keyring.gpg
-    echo "deb [signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] https://apt.releases.hashicorp.com $(lsb_release -cs) main" | sudo tee /etc/apt/sources.list.d/hashicorp.list > /dev/null
-    sudo apt-get update && sudo apt-get install terraform
-    ```
-
-3.**Docker:**
-
-```bash
-    curl -fsSL https://get.docker.com | sudo bash
-    sudo usermod -aG docker $USER
-    ```
-
-4.**Helm:**
-
-    ```bash
-    curl -fsSL -o get_helm.sh https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3
-    chmod +x get_helm.sh
-    ./get_helm.sh
-    ```
-
-Vérifiez que Minikube est Démarré : Si vous utilisez Minikube, assurez-vous qu'il est démarré. Exécutez la commande suivante pour démarrer Minikube si ce n'est pas déjà fait :
-
-```bash
-minikube start
-```
-
-Vérifiez la Configuration Kubernetes : Vérifiez que kubectl pointe vers le bon cluster Kubernetes. Exécutez la commande suivante pour afficher la configuration kubectl :
-
-```bash
-kubectl config view
-```
-
-#### Initialiser et déployer l'infrastructure Terraform
-
-```bash
-terraform init
-terraform validate
-terraform plan
-terraform apply
-```
-
-### CI/CD Pipeline
-
-Le pipeline CI/CD est déclenché automatiquement sur les pull requests. Il construit l'image Docker, la pousse vers le registre Docker et déploie l'application en mode canary sur Kubernetes.
-
-### Docker Build Multi-Staged
-
-Le fichier `Dockerfile` dans `platforms/dev` utilise un build multi-staged pour optimiser la taille de l'image.
-
-### Packer et Ansible
-
-1. Utilisez Packer pour construire une image Docker en remplaçant `${SHA}` par le commit SHA actuel.
-2. Packer utilise Ansible pour le provisionnement. Les tâches spécifiques peuvent être ajoutées dans `ansible/playbook.yml`.
-
-Vous pouvez également exécuter le processus de build multi-staged Docker en exécutant les commandes suivantes :
-
-#### Construire l'image Docker multi-staged
-
-```bash
-docker build -t your-docker-repo/voting-app:${SHA} -f platforms/dev/Dockerfile .
-```
-
-#### Pousser l'image vers le registre Docker
-
-```bash
-docker push your-docker-repo/voting-app:${SHA}
-```
+## Rappel des commandes 
+| commande | Description |
+|----|-----|
+| terraform init | Initialise terraform dans le dossier courant |
+| terraform validate . | Verifie la syntaxe des fichier terraform |
+| terraform plan | Affiche ce que va deployer terraform |
+| terraform apply | Deploie les resources ecrite dans terraform |
+| terraform destroy | Detruis les resources ecrite dans terraform |
+| helm create nom_chart | Cree un nouveau repo helm |
+| helm install NAME nom_chart | Installe le chart nom_chart au nom de NAME dans kubernetes |
+| helm upgrade NAME nom_chart | Update le chart nom_chart au nom de NAME dans kubernetes avec les nouvelles valeurs |
+| helm uninstall nom_chart | Supprime le chart nom_chart dans kubernetes ainsi que les pods |
+| helm rollback nom_chart | Reviens a la version precedente du chart |
